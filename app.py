@@ -7,6 +7,8 @@ from tensorflow.keras.models import load_model
 import mediapipe as mp
 import io
 
+# tf.compat.v1.disable_eager_execution()
+
 # Custom class for gesture recognition
 class SignLanguageRecognizer:
     def __init__(self):
@@ -55,6 +57,9 @@ class SignLanguageRecognizer:
         landmarks = self.extract_landmarks(frame)
         gesture = self.recognize_gesture()
         self.sequence.append(landmarks)
+
+        if len(self.sequence) > 90:  # You can adjust this limit as needed
+            self.sequence.pop(0) 
 
         return gesture
 

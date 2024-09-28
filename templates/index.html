@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gesture Recognition</title>
+    <link rel="stylesheet" type="text/css" href="/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Sign Language Gesture Recognition</h1>
+        <p>Real-time sign language gesture recognition using your webcam.</p>
+        
+        <!-- Video element to show webcam feed -->
+        <video id="video" width="640" height="480" autoplay></video>
+        
+        <!-- Gesture recognition result display -->
+        <div id="gesture-result">
+            <h2>Recognized Gesture: <span id="gesture"></span></h2>
+        </div>
+
+        <div id="gesture-labels">
+            <h2>Gesture Labels:</h2>
+            <ul>
+                {% for label in labels %}
+                    <li>{{ label }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const gestureDisplay = document.getElementById('gesture');
+
+        // Access the user's webcam
+        if (navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(function (stream) {
+                    video.srcObject = stream;
+                })
+                .catch(function (error) {
+                    console.log("Something went wrong with webcam access.");
+                });
+        }
+
+        // Send frames to the server via an API call
+        function captureFrameAndSend() {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Convert canvas to a blob and send via fetch or WebSocket
+            canvas.toBlob((blob) => {
+                const formData = new FormData();
+                formData.append('frame', blob);
+
+                fetch('/process_frame', {
+                    method: 'POST',
+                    body: formData
+                }).then(response => response.json())
+                .then(data => {
+                    // Update UI with the gesture recognized by the server
+                    if (data.gesture) {
+                        gestureDisplay.textContent = data.gesture;
+                    }
+                }).catch(error => console.error('Error:', error));
+            });
+        }
+
+        // Capture frame every 100ms and send to server
+        setInterval(captureFrameAndSend, 100);
+    </script>
+</body>
+</html>
